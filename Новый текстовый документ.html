@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>СПА-туризм в Сибири — Карта и Таблица</title>
+  <!-- Bootstrap и DataTables -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+  <!-- Иконки -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f9f8;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      font-family: 'Pacifico', cursive;
+      font-size: 2.5rem;
+      color: #4a7c59;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    /* Переключатель языка */
+    .lang-selector {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .lang-selector label {
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    /* Карта */
+    #map-container {
+      width: 960px;
+      height: 600px;
+      margin: 0 auto 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    #map {
+      width: 960px;
+      height: 600px;
+    }
+    /* Таблица и поиск */
+    #tableContainer {
+      margin-top: 20px;
+      width: 960px;
+      height: 600px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #searchInput {
+      width: 350px;
+      margin-bottom: 10px;
+    }
+    /* Заголовки секций */
+    h3 {
+      margin-top: 30px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      font-size: 1.4rem;
+      color: #2e7d32;
+    }
+    h3 i {
+      margin-right: 8px;
+      color: #66bb6a;
+    }
+    /* Подвал сайта */
+    footer {
+      background-color: #222;
+      color: #fff;
+      padding: 40px 20px;
+      margin-top: 40px;
+    }
+    footer h4 {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    footer ul {
+      list-style: none;
+      padding: 0;
+    }
+    footer ul li {
+      margin-bottom: 8px;
+    }
+    footer a {
+      color: #fff;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    .social-icons a {
+      margin-right: 12px;
+      font-size: 20px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Переключатель языка -->
+<div class="lang-selector">
+  <label for="languageSelect"><i class="fas fa-globe"></i> Язык / Language:</label>
+  <select id="languageSelect" class="form-control ml-2" style="width:auto;">
+    <option value="ru" selected>Русский</option>
+  </select>
+</div>
+
+<h1>СПА-туризм в Сибири</h1>
+
+<!-- Карта -->
+<h3><i class="fas fa-map-marked-alt"></i>Интерактивная карта</h3>
+<div id="map-container">
+  <div id="map"></div>
+</div>
+
+<!-- Поиск -->
+<h3><i class="fas fa-search-location"></i>Поиск</h3>
+<input type="text" id="searchInput" class="form-control" placeholder="Поиск по всем полям" />
+
+<!-- Таблица -->
+<div id="tableContainer" class="table-responsive">
+  <table id="sanatoriumsTable" class="display table table-striped table-bordered" style="width:100%">
+    <thead>
+      <tr>
+        <th>№</th>
+        <th>Название</th>
+        <th>Регион</th>
+        <th>Расположение</th>
+        <th>Сайт</th>
+        <th>Телефон</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Скрипты -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+$(document).ready(function() {
+  const sanatoriums = [
+    // Томская
+    { name: "Ключи Центр реабилитации Фонда социального страхования РФ", region: "Томская область", location: "Центральная ул., 1, стр. 1, поселок Ключи", link: "https://kluchi.tom.ru/", phone: "8 800 300 66 65", email: "kluchi@mail.tomsknet.ru", lat: 56.402883, lon: 85.026342 },
+    { name: "Космонавт санаторий", region: "Томская область", location: "пос. Некрасово, Урочище Некрасовское, 7", link: "https://www.санаторийкосмонавт.рф/", phone: "+7 (3822) 931-546", email: "kosmonawt@list.ru", lat: 56.350627, lon: 85.129855 },
+    { name: "Синий утес, санаторий", region: "Томская область", location: "Синий Утёс, ул. Парковая, д. 1, д. 9", link: "http://siniy-utes.ru/", phone: "+7(3822)95-43-41", email: "dream0507@mail.ru", lat: 56.3342119, lon: 84.9234656 },
+    { name: "Прометей", region: "Томская область", location: "Калтай, территория СП Прометей, стр. №4", link: "http://www.prometey.tom.ru/", phone: "+7(3822)96-71-89", email: "prometey@mail.ru", lat: 56.2478696, lon: 84.8830028 },
+    { name: "Заповедное, санаторий-профилакторий", region: "Томская область", location: "Вершинино, ул. Ларинская, д. 1", link: "https://bazy-otdyh.ru/", phone: "+7(3822)95-95-25", email: "zapovednoe@list.ru", lat: 56.2335285, lon: 84.9616381 },
+    { name: "Санаторий Чажемто", region: "Томская область", location: "Чажемто, ул. Курортная, д. 1, стр. 6, 19, 20, 23", link: "http://chazhemto.ru/", phone: "+7(3825)42-15-27", email: "kurort70@mail.ru", lat: 58.0730972, lon: 82.83638 },
+
+    // Хакасия
+    { name: "Озеро Шира Курорт", region: "Республика Хакасия", location: "655220, Республика Хакасия, п. Жемчужный, ул.Аптечная, 2а", link: "https://kurort-shira.ru/", phone: "8-800-201-1366", email: "zakaz@kurort-shira.ru", lat: 54.4969868, lon: 90.1560104 },
+    { name: "Санаторий-профилакторий «Металлург»", region: "Республика Хакасия", location: "г. Абаза, ул. Гагарина 5А", link: "http://sayan-blago.ru/", phone: "+7 (39047) 2-49-99", email: "", lat: 52.6502324, lon: 84.0984914 },
+    { name: "Саянская благодать", region: "Республика Хакасия", location: "г. Абаза, ул. Гагарина 5А", link: "http://sayan-blago.ru/", phone: "+7 (39047) 2-49-99", email: "", lat: 52.6502324, lon: 84.0984914 },
+    { name: "Туманный", region: "Республика Хакасия", location: "Красноярская железная дорога, разъезд Туманный", link: "https://tumannet.ru/", phone: "+7 (961) 895-57-59", email: "", lat: 54.0873125, lon: 90.3269882 },
+    { name: "Черногорский Социально-оздоровительный центр Имени А. И. Лебедя", region: "Республика Хакасия", location: "655163, Республика Хакасия, г. Черногорск, ул. Генерала Тихонова, дом 4", link: "https://центрлебедя.рф/", phone: "+7 (39031) 3-82-17", email: "gov@r-19.ru", lat: 53.8261567, lon: 91.3439155 },
+
+    // Тува
+    { name: "Серебрянка", region: "Республика Тыва", location: "667901, пгт Каа-Хем, ул. Профилакторская, д. 1 А", link: "https://serebryanka.rtyva.ru/", phone: "+7(3942)29-20-79", email: "sanprof_sereb@rtyva.ru", lat: 51.7002767, lon: 94.5850214 },
+    { name: "Уш-Белдир", region: "Республика Тыва", location: "667902, арбан Уш-Белдир, Юбилейный пер., 7, Кызыл", link: "https://xn----btbjdqq1br9b.xn--p1ai/", phone: "+7(3942)29-20-79", email: "serebryanka@rtyva.ru", lat: 51.7159897, lon: 94.4728153 },
+
+    // Алтай
+    { name: "ГУП Курорт Уш-Белдир", region: "Республика Алтай", location: "667902, Республика Тыва, арбан Уш-Белдир, Юбилейный пер., 7, Кызыл", link: "https://xn----btbjdqq1br9b.xn--p1ai/", phone: "7(3942)29-20-79", email: "serebryanka@rtyva.ru", lat: 51.7159897, lon: 84.4728153 },
+
+    // Омская область
+    { name: "«Евромед» санаторий", region: "Омская область", location: "Курортная ул., 8/2, посёлок Ачаирский", link: "https://semo55.ru/", phone: "+7 (3812) 67-70-60", email: "sale@semo55.ru", lat: 54.5834617, lon: 74.0338668 },
+    { name: "Омскгражданстрой, Санаторий-профилакторий", region: "Омская область", location: "г. Омск, ул. 5-я Марьяновская, д. 4", link: "https://company.rzd.ru/ru/9349/page/105554?id=509#enttab-main", phone: "+7(3812)44-31-78", email: "spom-gorozhanskayaTP@wsr.rzd.ru", lat: 54.918676, lon: 73.355681 },
+    { name: "«Колос» санаторий", region: "Омская область", location: "ул. Санаторий Колос, д. 1Б", link: "https://www.kolos-omsk.ru/?utm_medium=organic&utm_source=yandex&utm_term=%7Bkeyword%7D", phone: "8-903-927-81-15", email: "omsk-kolos@yandex.ru", lat: 55.3394426, lon: 73.1429322 },
+    { name: "«Коммунальник» санаторий", region: "Омская область", location: "ул. с/п Коммунальник, д. 4", link: "https://san-kommunalnik.ru/", phone: "+7 (3812) 90-87-88", email: "kommunalnik@inbox.ru", lat: 55.3404151, lon: 73.1215978 },
+    { name: "Омский центр реабилитации Фонда соцстраха РФ", region: "Омская область", location: "Берёзовая ул., 1, Омск", link: "http://sanom.ru/", phone: "+7 (3812) 23-15-32", email: "sanom@mail.ru", lat: 54.972, lon: 73.368 },
+    { name: "Оптимист санаторий-профилакторий", region: "Омская область", location: "ул. Дементьева, 21А, Омск", link: "https://irooo.ru/sanatorij-profilaktorij-optimist", phone: "3812 53-68-89", email: "optimistirooo@mail.ru", lat: 54.956, lon: 73.362 },
+
+    // Новосибирская
+    { name: "Отель Парус", region: "Новосибирская область", location: "Новосибирская область, д.п. Кудряшовский, ул. Береговая, 56", link: "https://www.parusresort.ru/", phone: "8 800-350-56-56", email: "nfo@parusresort.ru", lat: 55.0872317, lon: 82.7781392 },
+    { name: "Клинический санаторий \"Парус\", Бердск", region: "Новосибирская область", location: "Бердск, ул. Красный сокол, д.29", link: "https://parusberdsk.ru/", phone: "8 (800) 300-68-28", email: "sales@parusberdsk.ru", lat: 54.7744031, lon: 83.0663662 },
+    { name: "Рассвет", region: "Новосибирская область", location: "ул. Зелёная Роща, 9/1, Бердск", link: "https://www.san-rasswet.ru/?cert-open=22609", phone: "8 (800) 250-69-19", email: "otdyhrassvet@mail.ru", lat: 54.723947, lon: 83.029028 },
+    { name: "Юбилейный", region: "Новосибирская область", location: "ул. Зелёная Роща, 15, Бердск", link: "https://www.san-rasswet.ru/?cert-open=22609", phone: "8 (800) 250-69-19", email: "otdyhrassvet@mail.ru", lat: 54.725651, lon: 83.0284089 },
+    { name: "«Сибиряк» санаторий-профилакторий", region: "Новосибирская область", location: "ул. Зелёная Роща, 15, Бердск", link: "https://spsib.ru/", phone: "+7 (383) 209-67-06", email: "sbk@spsib.ru", lat: 54.727713, lon: 83.030452 },
+    { name: "«Сосновка» курорт-отель", region: "Новосибирская область", location: "Бердск, п. Новый, Речкуновская зона отдыха", link: "", phone: "8 (861) 202-50-71", email: "", lat: 54.793754, lon: 83.10016 },
+
+    // Красноярский край
+    { name: "«Бальзам» санаторий", region: "Красноярский край", location: "Электромашиностроителей дом 2/2, террит. Промышленная площадка Электрокомплекса, Минусинский р-н", link: "https://pfmed-balsam.ru/", phone: "+7 (950) 974-13-72", email: "pfmed@yandex.ru", lat: 53.6420123, lon: 91.7377367 },
+    { name: "«Березка» санаторий-профилакторий", region: "Красноярский край", location: "Красноярский край, Рыбинский район, Новокамалинский сельсовет, село Гмирянка", link: "https://санаторий-березка.рф/", phone: "8-800-222-38-00", email: "sanatoriy.berezka@yandex.ru", lat: 53.5441401, lon: 88.6466466 },
+    { name: "«Звездный» санаторий-профилакторий", region: "Красноярский край", location: "662970, Россия, Красноярский край, г. Железногорск, ул. Восточная, 4", link: "https://zvezdny.iss-reshetnev.ru/", phone: "8 (3919) 76-51-09", email: "zvezdny@iss-reshetnev.ru", lat: 55.9488889, lon: 92.8388889 },
+    { name: "«Красноярское Загорье» санаторий", region: "Красноярский край", location: "с. Кожаны, зд. 39", link: "https://zagorie.ru/", phone: "+7 (391) 228-73-33", email: "zagorie@zagorie.ru", lat: 53.8738863, lon: 94.7930861 },
+    { name: "«Озеро Учум» курорт", region: "Красноярский край", location: "г. Красноярск, ул. Лесная, 43а", link: "https://курортучум.рф/", phone: "8-391-299-13-89", email: "curortuchum@yandex.ru", lat: 54.4969868, lon: 90.1560104 },
+    { name: "«Сосновый Бор» санаторий", region: "Красноярский край", location: "Красноярский Край, п. Озеро Тагарское, берег Юго-западный", link: "https://tagarskoe.ru/", phone: "8 (391 32) 2-16-88", email: "sosnovbor-tagary@mail.ru", lat: 53.505621, lon: 89.772677 },
+    { name: "«Такмак-Спа» отель", region: "Красноярский край", location: "ул. Базайская, 234а, г. Красноярск", link: "https://takmakhotel.ru/загородный-отель-такмак-спа-отель/", phone: "+7(391)231-48-20", email: "takmak_spa@mail.ru", lat: 55.9488889, lon: 92.8388889 },
+    { name: "«Тесь» социально-оздоровительный центр", region: "Красноярский край", location: "Народная ул., 64А, Минусинск", link: "https://sun-tes.ru/", phone: "+7 (39132) 4-23-70", email: "office101@tesresort.ru", lat: 53.7828126, lon: 87.5937796 },
+    { name: "Санаторий-профилакторий «Юбилейный» Горно-химического комбината", region: "Красноярский край", location: "Восточная ул., 2, Железногорск", link: "https://spu24.ru/", phone: "7 (3919) 72-72-72", email: "info@spu24.ru", lat: 55.9488889, lon: 94.7930861 },
+
+    // Кемеровская
+    { name: "«Борисовский» санаторий", region: "Кемеровская область", location: "652452, Кемеровская область - Кузбасс, с Борисово, территория Санаторий, д. 11", link: "http://sanbor.ru", phone: "7(3844) 64-23-21", email: "sanbor@dsznko.ru", lat: 54.8095276, lon: 86.5647523 },
+    { name: "«Кедровый бор» санаторий", region: "Кемеровская область", location: "ул. Кедровый Бор, 3, д. Подъяково", link: "https://kedbor.ru/", phone: "8 800 600-15-52", email: "priemnaya@kedbor.kru.ru", lat: 55.5809413, lon: 85.8267165 },
+    { name: "«Лесная сказка» санаторий", region: "Кемеровская область", location: "654200, Кемеровская область - Кузбасс, п Кульчаны, тер. Кульчаны, здание 2", link: "http://ashmarino42.ru", phone: "7 (9832)15-13-50", email: "lesnayaskazka.2021@mail.ru", lat: 53.612552, lon: 87.2642278 },
+    { name: "«Лесное озеро» санаторий", region: "Кемеровская область", location: "Кемеровская область, Гурьевский муниципальный округ, посёлок Салаирский Дом Отдыха", link: "https://lesnoeozero-42.ru/", phone: "8 (800) 444 68 47", email: "l.ozero2010@yandex.ru", lat: 54.2770431, lon: 85.7756968 },
+    { name: "«Молодежный» санаторий-профилакторий", region: "Кемеровская область", location: "г. Кемерово, ул. Д.Бедного, 4", link: "https://molodezhny.kuzstu.ru/", phone: "8-950-266-3072", email: "kta.sanpr@kuzstu.ru", lat: 55.3484469, lon: 86.0795477 },
+    { name: "«Нарцисс» санаторий-профилакторий", region: "Кемеровская область", location: "г. Новокузнецк, ул. Кутузова, 36", link: "https://med-narciss.ru/?utm_referer=geoadv_yabs&utm_ya_campaign=225941587476&yabizcmpgn=17873444&utm_candidate=59160225187", phone: "8 800 700 46 64", email: "mc@med-narciss.ru", lat: 53.7483125, lon: 87.1265072 },
+    { name: "«Полосухинский» санаторий-профилакторий", region: "Кемеровская область", location: "Тульская ул., 40, микрорайон Байдаевский, Новокузнецк", link: "https://polosuhinskiy.ru/", phone: "+7 (3843) 99-38-99", email: "", lat: 53.787735, lon: 87.304456 },
+    { name: "«Серебряный ключ» санаторий-профилакторий", region: "Кемеровская область", location: "Кемеровская область, Беловский муниципальный округ, посёлок Старобачаты", link: "https://spklych.ru/", phone: "+7 (38452) 9-91-37", email: "sp_kluch@bk.ru", lat: 54.2065445, lon: 86.2014168 },
+    { name: "«Танай» санаторий", region: "Кемеровская область", location: "с. Журавлево, Промышленновский муниципальный округ, Кузбасс", link: "https://tanay42.ru/", phone: "8 (800) 302-82-72", email: "", lat: 53.7828126, lon: 87.5937796 },
+    { name: "«Томь-Усинский» санаторий", region: "Кемеровская область", location: "г. Мыски, ул. Ленина, д.40", link: "http://tomusanator.usluga.me/", phone: "(38474) 3-50-05, 3-25-50", email: "tomusanator@mail.ru", lat: 53.7828126, lon: 87.5937796 },
+    { name: "«Шахтер» санаторий", region: "Кемеровская область", location: "г. Прокопьевск, ул. Запарковая, д.53", link: "https://shahtersan.ru/", phone: "8 (3846) 61 - 95 - 06", email: "", lat: 53.7998209, lon: 86.7975515 },
+    { name: "«Энергетик» санаторий-профилакторий", region: "Кемеровская область", location: "652320 Кемеровская область - Кузбасс, Топкинский Муниципальный округ, территория зона отдыха, Топкинская роща 1", link: "https://energetic-sanatory.ru/", phone: "8 (3842) 66-05-55, 8 (923) 501-25-25", email: "sanatoryi-energo@mail.ru", lat: 53.5095951, lon: 87.2703517 },
+
+    // Иркутская
+    { name: "Ангара (Иркутская обл.)", region: "Иркутская область", location: "г. Иркутск, ул. 2ая Железнодорожная, 4", link: "https://курортангара.рф/", phone: "7 (3952) 99-89-89", email: "kurortangara2@mail.ru", lat: 52.2614794, lon: 104.3635243 },
+    { name: "Grand Baikal", region: "Иркутская область", location: "Гора Соболиная, Байкальск, Россия", link: "https://baikalski.net/hotels/grand-bajkal/", phone: "+7 800 555-88-37", email: "", lat: 52.283692, lon: 104.301124 },
+    { name: "Жемчужина Сибири", region: "Иркутская область", location: "г Слюдянка, ул. Слюдянских Красногвардейцев, д. 57", link: "", phone: "7(3954)45-31-34", email: "baikal-veter@rambler.ru", lat: 51.6456181, lon: 103.7067756 },
+    { name: "Иркут", region: "Иркутская область", location: "г Иркутск, ул. Украинская, д. 6", link: "https://www.sanirkut.ru/", phone: "7(3952)32-52-35", email: "irkut09@mail.ru", lat: 52.3501803, lon: 104.2235114 },
+    { name: "Иркутский", region: "Иркутская область", location: "г Иркутск, пер. Деповский, д. 7", link: "", phone: "7(3952)63-07-61", email: "sp_NaumovaMA@esrr.rzd.ru", lat: 52.3376678, lon: 104.202486 },
+    { name: "Кедр", region: "Иркутская область", location: "г. Саянск, автодорога Западная, д.4", link: "https://kurortkedr.ru/", phone: "8 (39553) 704-65", email: "mail@kurortkedr.ru", lat: 52.917558, lon: 105.7752232 },
+    { name: "Родник", region: "Иркутская область", location: "г Ангарск, ул. Чайковского, д. 51", link: "https://ksko38.ru/", phone: "7(3955)57-17-77", email: "of59@anhk.rosneft.ru", lat: 52.5916786, lon: 105.665825 },
+    { name: "Русь", region: "Иркутская область", location: "ул. Героев Труда, 57, Усть-Илимск", link: "https://курорт-русь.рф/", phone: "7 (3952) 25-88-87", email: "", lat: 52.7607549, lon: 105.61816 },
+    { name: "Солнечный", region: "Иркутская область", location: "г. Братск, ул. Северный Артек, д. 10", link: "https://sun-bratsk.ru/page21766833.html", phone: "(3953) 35-00-52", email: "soln_reg@mail.ru", lat: 52.5916786, lon: 105.708 },
+    { name: "Усолье", region: "Иркутская область", location: "ул. Максима Горького, 7, Усолье-Сибирское", link: "https://kurort-usolie.ru/", phone: "7 (924) 602-14-14", email: "", lat: 52.7607549, lon: 103.6674438 },
+    { name: "Усть-Кут", region: "Иркутская область", location: "ул. Курорт, 1, Усть-Кут", link: "https://sanatoriy-ustkut.ru/", phone: "8(39565)5-48-59", email: "kurort_ust-kut@mail.ru", lat: 56.789442, lon: 105.61816 },
+    { name: "Эйсейра", region: "Иркутская область", location: "ул. Речников, 1А, Усть-Кут", link: "http://www.eiseira.com/", phone: "7 (39565) 5-73-16", email: "eiseira@mail.ru", lat: 56.7931298, lon: 105.7752232 },
+
+    // Алтайский край
+    { name: "Аврора", region: "Алтайский край", location: "ул. Славского, 53, Белокуриха", link: "https://aurora-altai.ru/", phone: "8 (800) 700-98-55", email: "info@aurora-altai.ru", lat: 51.9841348, lon: 84.9629165 },
+    { name: "Бодрость", region: "Алтайский край", location: "ул. 25-го Партсъезда, 10/1, Заринск", link: "https://заводская-поликлиника-алтай-кокс.рф/sanatoriy", phone: "7 (933) 310-62-92", email: "msch-zarinsk@yandex.ru", lat: 53.7063268, lon: 84.9044134 },
+    { name: "Алтай", region: "Алтайский край", location: "659900, г. Белокуриха, ул. Славского, д. 39", link: "https://altai-west.ru/", phone: "8 (800) 250 0167", lat: 51.9872645, lon: 84.963156 },
+    { name: "Алтайский замок", region: "Алтайский край", location: "659900, г. Белокуриха, ул. Славского, д. 29", link: "https://altzamok.ru/?utm_source=yandex...", phone: "8 (800) 7000-944", email: "bron@altzamok.ru", lat: 51.9886234, lon: 84.9677114 },
+    { name: "АЛТАЙХИМПРОМ", region: "Алтайский край", location: "658837, г. Яровое, ул. Ленина, 19", link: "https://himikyarovoe.ru/", phone: "7 (923) 003-43-44", lat: 51.9872645, lon: 84.963156 },
+    { name: "Барнаульский", region: "Алтайский край", location: "г. Барнаул, ул. Парковая, 21А", link: "https://san-barnaul.ru/", phone: "7 (3852) 20-22-66", email: "saba-market@mail.ru", lat: 53.298288, lon: 83.771434 },
+    { name: "Белокуриха", region: "Алтайский край", location: "ул. Славского, 9, Белокуриха", link: "https://www.belokurikha-san.ru/", phone: "8 (800) 707-51-83", email: "belokuriha-san@yandex.ru", lat: 51.994144, lon: 84.971163 },
+    { name: "Белокуръ", region: "Алтайский край", location: "г. Белокуриха, зона курорта, ул. Ефима Славского, 79", link: "https://belokur14.ru/", phone: "8 800 700-99-65", email: "info@belokur.ru", lat: 51.9786062, lon: 84.9570569 },
+    { name: "Гренада", region: "Алтайский край", location: "Первомайский район, п. Казачий", link: "http://grenada-san.ru/", phones: ["+7 38532 50-401", "+7 983 548 0046"], email: "san_grenada@mail.ru", lat: 53.5441401, lon: 83.8566466 },
+    { name: "Долина Алтая", region: "Алтайский край", location: "Лесная ул., 10, посёлок Даниловка", link: "https://dolinaaltai.ru/", phone: "7 (961) 983-94-24", email: "support@dolinaaltai.ru", lat: 51.9768431, lon: 85.0555185 },
+    { name: "Жемчужина Белокурихи", region: "Алтайский край", location: "г. Белокуриха, ул. Славского д. 49", link: "https://жемчужинабелокурихи.рф/", phone: "8 (800) 250-37-33", email: "info@жемчужинабелокурихи.рф", lat: 51.984778, lon: 84.9639795 },
+    { name: "Лазурный", region: "Алтайский край", location: "658474, Алтайский край, Змеиногорский район, с. Барановка, ул. Набережная 3", link: "https://lazurniy-altai.ru/", phone: "7 (385-2) 52-90-77", email: "sanatoriy.lazurny@mail.ru", lat: 54.7820645, lon: 83.1200148 },
+    { name: "Обские плесы", region: "Алтайский край", location: "658022, Алтайский край, м. р-н Тальменский, с.п. Новоозерский, тер. Обские плёсы, здание 1", link: "https://obskie22.ru/", phone: "8 (800) 700-38-71", email: "obskie22@mail.ru", lat: 53.3339497, lon: 83.7772605 },
+    { name: "Обь", region: "Алтайский край", location: "Змеиногорский тракт, 77, Барнаул", link: "https://san-ob.ru/", phone: "8 (800) 250-45-90", email: "san-ob@bk.ru", lat: 53.28141, lon: 83.752411 },
+    { name: "Рассветы над Бией", region: "Алтайский край", location: "Озёрная ул., 2, село Стан-Бехтемир", link: "https://rassvety.ru/", phone: "8 (800) 300-82-32", email: "info@rassvety.ru", lat: 52.5916786, lon: 85.5759506 },
+    { name: "Родник Алтая", region: "Алтайский край", location: "ул. Братьев Ждановых, 2, Белокуриха", link: "https://rodnik-altaya.com/", phone: "8 800 550-08-80", email: "sales@rodnik-altaya.com", lat: 51.994144, lon: 84.971163 },
+    { name: "Россия", region: "Алтайский край", location: "ул. Славского, 34, Белокуриха", link: "https://www.sanrussia.ru/", phone: "8 (800) 250-37-70", email: "info@sanrussia.ru", lat: 51.9843215, lon: 84.9661178 },
+    { name: "Сосновый бор", region: "Алтайский край", location: "Первомайский район, с. Зудилово, ул. Шукшина, 58А", link: "https://sb22.ru/", phone: "7 (3852) 22-38-48", email: "sb-info@sb22.ru", lat: 53.505621, lon: 83.9152459 },
+    { name: "Станкостроитель", region: "Алтайский край", location: "г. Барнаул, ул. Тихонова, д.33, корпус Б", link: "https://sps22.su/", phone: "7 (3852) 68-42-49", lat: 53.309041, lon: 83.762468 },
+    { name: "Транссиб", region: "Алтайский край", location: "ул. Славского, 57, Белокуриха", link: "https://rzdz.ru/ru/belokurikha/sanatorium-transsib/?utm_content=main&utm_medium=link&utm_source=yasprav", phone: "7 (38577) 2-05-68", email: "info.transsib@rzdz.ru", lat: 51.9859854, lon: 84.9615254 },
+    { name: "Эдем", region: "Алтайский край", location: "ул. Славского, 40, Белокуриха", link: "https://edem-altay.ru/", phone: "8 (800) 700 99-92", email: "golysheva@edem-altay.ru", lat: 51.9824285, lon: 84.9611609 },
+    { name: "Центросоюз РФ в г. Белокуриха", region: "Алтайский край", location: "ул. Славского, 45, Белокуриха", link: "https://центросоюз-белокуриха.рф/?utm_source=none&utm_medium=cpc&utm_campaign=centrosouz&utm_term=Санаторий%20Центросоюз%20Белокуриха&yclid=1552797291112824831", phone: "7 (38577) 2-09-25", lat: 51.9852732, lon: 84.9636645 }
+  ];
+
+  // Инициализация карты
+  const map = L.map('map');
+  const markers = [];
+
+  const centerLat = sanatoriums.reduce((s, v) => s + v.lat, 0) / sanatoriums.length;
+  const centerLon = sanatoriums.reduce((s, v) => s + v.lon, 0) / sanatoriums.length;
+  map.setView([centerLat, centerLon], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // Создаем маркеры
+  sanatoriums.forEach(s => {
+    const m = L.marker([s.lat, s.lon]).addTo(map);
+    m.bindPopup(`<b>${s.name}</b><br>${s.location}`);
+    markers.push({ marker: m, data: s });
+  });
+
+  // Таблица DataTables
+  const table = $('#sanatoriumsTable').DataTable({
+    data: sanatoriums,
+    pageLength: 10,
+    columns: [
+      { data: null, render: (d, t, r, m) => m.row + 1 },
+      { data: 'name', render: (d, t, r) => `<a href="#" class="name-link" data-lat="${r.lat}" data-lon="${r.lon}">${d}</a>` },
+      { data: 'region' },
+      { data: 'location' },
+      { data: 'link', render: (d, t, r) => r.link ? `<a href="${r.link}" target="_blank">Сайт</a>` : "" },
+      { data: 'phone' },
+      { data: 'email' }
+    ]
+  });
+
+  // Клик по названию
+  $('#sanatoriumsTable tbody').on('click', 'a.name-link', function(e) {
+    e.preventDefault();
+    const lat = parseFloat($(this).data('lat'));
+    const lon = parseFloat($(this).data('lon'));
+    const name = $(this).text();
+
+    map.setView([lat, lon], 15);
+    // Удаляем все маркеры и добавляем только выбранный
+    markers.forEach(m => map.removeLayer(m.marker));
+    const m = L.marker([lat, lon]).addTo(map);
+    m.bindPopup(`<b>${name}</b>`).openPopup();
+  });
+
+  // Поиск
+  $('#searchInput').on('keyup', function() {
+    table.search(this.value).draw();
+    const data = table.rows({ filter: 'applied' }).data().toArray();
+    // Удаляем все маркеры
+    markers.forEach(m => map.removeLayer(m.marker));
+    // Добавляем только те, что отображаются
+    data.forEach(d => {
+      const m = markers.find(mk => mk.data.lat === d.lat && mk.data.lon === d.lon);
+      if (m) m.marker.addTo(map);
+    });
+  });
+});
+</script>
+
+<!-- Подвал сайта -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h4>О сайте</h4>
+        <p>Город Томск • 2025</p>
+        <p>Все права защищены</p>
+      </div>
+      <div class="col-md-4">
+        <h4>Навигация</h4>
+        <ul>
+          <li><a href="#top">Наверх</a></li>
+          <li><a href="/privacy">Политика конфиденциальности</a></li>
+          <li><a href="/contacts">Контакты</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h4>Социальные сети</h4>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-vk"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-3" style="font-size: 0.8em;">
+      © 2025 Город Томск. Все права защищены.
+    </div>
+  </div>
+</footer>
+</body>
+</html>
